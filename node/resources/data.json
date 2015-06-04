@@ -1,0 +1,20 @@
+{
+  "nodes":[
+    {"name":"osc0", "x":10, "y":20,  "sources":["sine", "saw"], "targets":["freq"]},
+    {"name":"filt1", "x":10, "y":100, "sources":["out"], "targets":["in"]}
+  ],
+
+  "links":[
+    {"source":"n0","target":"n1","value":1},
+    {"source":"n0","target":"n2","value":8},
+    {"source":"n1","target":"n4","value":10},
+    {"source":"n1","target":"n3","value":10},
+    {"source":"n2","target":"n5","value":10},
+    {"source":"n5","target":"n0","value":10}
+  ],
+  "foo": {
+    "A" : {"x":10, "y":10},
+    "B" : {"x":50, "y":10},
+    "C" : {"x":70, "y":10}
+  }
+}

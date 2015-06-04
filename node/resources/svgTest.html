@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+	<link type="text/css" href="main.css" rel="stylesheet">
+	<script>
+
+		var GUI = (function() {
+
+
+			var SERVER = "http://localhost:8887";
+
+			this.sendGetData = function (theURL, theCallback) {
+				var xmlhttp; 
+		        if (window.XMLHttpRequest) {
+		        	xmlhttp = new XMLHttpRequest();
+		        } else {
+		        	xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+		        }
+		        xmlhttp.onreadystatechange = theCallback;
+		        xmlhttp.open("GET", theURL, true);
+		        xmlhttp.send();
+			}
+
+			this.sendPostData = function (theURL, theCallback) {
+				var xmlhttp; 
+		        if (window.XMLHttpRequest) {
+		        	xmlhttp = new XMLHttpRequest();
+		        } else {
+		        	xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+		        }
+		        xmlhttp.onreadystatechange = theCallback;
+		        xmlhttp.open("POST", theURL, true);
+		        xmlhttp.send();
+			}
+
+			this.init = function() {
+				var menu = document.getElementById("addNode");
+				
+				for (var path in nodeTypes) {
+					var head = document.createElement("div");
+					head.innerHTML = path;
+					menu.appendChild(head);
+					for (var i in nodeTypes[path]) {
+						var menuItem = document.createElement("div");
+						menuItem.setAttribute("onclick", "GUI.addNode('"+path+"','"+i+"')");
+						menuItem.innerHTML=i;
+						menu.appendChild(menuItem);
+					}
+				}
+
+				update();
+			}
+			
+			// get node types from server
+			var callback = function() {
+				if (this.readyState == 4 && this.status == 200) {
+					nodeTypes = JSON.parse(this.responseText);
+					init();
+				}
+			}
+			sendGetData(SERVER+"/CLASSES", callback);
+			var nodeTypes = {};
+
+
+			var patch = {
+				"nodes" : {}, 
+				"connections" : {}
+			};
+			
+			var nextId = 0;
+			var that = {};
+			var startNode = null;
+			var endNode = null;
+
+			var selectElement = 0;
+			var currentX = 0;
+			var currentY = 0;
+			var currentMatrix = 0;
+
+			this.selectElement = function (evt, target) { 
+				selectedElement = target;
+    			currentX = evt.clientX;
+    			currentY = evt.clientY;
+				currentMatrix = selectedElement.getAttributeNS(null, "transform").slice(7,-1).split(' ');
+				
+				for(var i=0; i<currentMatrix.length; i++) {
+       	 			currentMatrix[i] = parseFloat(currentMatrix[i]);
+      			}
+
+    			selectedElement.setAttributeNS(null, "onmousemove", "moveElement(evt)");
+    			selectedElement.setAttributeNS(null, "onmouseout", "deselectElement(evt)");
+				selectedElement.setAttributeNS(null, "onmouseup", "deselectElement(evt)");
+
+  			}
+
+  			this.moveElement = function(evt){
+  				dx = evt.clientX - currentX;
+			  	dy = evt.clientY - currentY;
+			  	currentMatrix[4] += dx;
+			 	currentMatrix[5] += dy;
+			  	newMatrix = "matrix(" + currentMatrix.join(' ') + ")";
+
+			  	selectedElement.setAttributeNS(null, "transform", newMatrix);
+			  	currentX = evt.clientX;
+			  	currentY = evt.clientY;
+			  	update();
+			}
+
+			this.deselectElement = function(evt) {
+				if(selectedElement != 0){
+			    	selectedElement.removeAttributeNS(null, "onmousemove");
+			    	selectedElement.removeAttributeNS(null, "onmouseout");
+			    	selectedElement.removeAttributeNS(null, "onmouseup");
+			    	selectedElement = 0;
+				}
+			}
+
+
+
+			this.drawNode = function (theNode) {
+
+				var id = theNode["id"];
+				var svg = document.getElementById('patch'); 
+				var hasNode = document.getElementById(id);
+
+				if (hasNode != null) return;
+
+				var newElement = document.createElementNS("http://www.w3.org/2000/svg", 'g');
+				//newElement.setAttribute("transform", "translate("+x+","+y+")");
+				newElement.setAttribute("transform", "matrix(1 0 0 1 0 0)");
+				newElement.setAttribute("id", id);
+				
+				var body = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
+				body.setAttribute("class", "node");
+				body.setAttribute("width","120");
+				body.setAttribute("height","40");
+				body.style.stroke = "#000"; 
+				body.style.strokeWidth = "5px";
+				body.style.fill = "grey";
+
+				newElement.setAttribute("onmousedown","selectElement(evt, this)");
+
+
+				newElement.appendChild(body);
+
+				var cnt = 0;
+				for (var i in theNode["inputs"]) {
+					var input = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
+					input.setAttribute("width","10");
+					input.setAttribute("height","10");
+					input.setAttribute("x",0);
+					input.setAttribute("y",cnt*12);
+					input.style.fill = "red";
+					input.setAttribute("id", theNode["id"]+"."+i);
+					input.setAttribute("onclick", "GUI.connect(this.id)");
+					newElement.appendChild(input);
+					cnt += 1;
+				}
+
+				cnt = 0;
+				for (var i in theNode["outputs"]) {
+					var output = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
+					output.setAttribute("width","10");
+					output.setAttribute("height","10");
+					output.setAttribute("x",110);
+					output.setAttribute("y",cnt*12);
+					output.style.fill = "green";
+					output.setAttribute("id", theNode["id"]+"."+i);
+					output.setAttribute("onclick", "GUI.connect(this.id)");
+					newElement.appendChild(output);
+					cnt += 1;
+				}			
+
+				var text = document.createElementNS("http://www.w3.org/2000/svg", 'text');
+				text.innerHTML = "XXX";
+				text.setAttribute("font-size",14);
+				text.setAttribute("fill", "red");
+				newElement.appendChild(text);
+				svg.appendChild(newElement);
+			}
+
+			this.update = function() {
+				console.log(patch);
+				for (var id in patch["nodes"]) {
+					drawNode (patch["nodes"][id]);
+				}
+				for (var id in patch["connections"]) {			
+					drawConnection(id);
+				}
+			}
+
+			that.addNode = function (path, type) {
+				patch["nodes"][type+nextId] = nodeTypes[path][type];
+				patch["nodes"][type+nextId]["id"] = type+nextId;
+				patch["nodes"][type+nextId]["class"] = path+"."+type;
+				nextId += 1;
+				update();
+				//sendData("patch", JSON.stringify(patch));
+			}
+
+
+			that.removeConnection = function(id) {
+
+				var svg = document.getElementById("patch");
+				var conn = document.getElementById(id);
+				delete patch["connections"][id]; // = null;
+				svg.removeChild(conn);
+			}
+
+			this.drawConnection = function (id) {
+
+				var svg = document.getElementById('patch');
+				var hasConnection = document.getElementById(id);
+				if (hasConnection!=null) {
+					svg.removeChild(hasConnection);
+					hasConnection = null;
+				}
+
+				if (hasConnection==null && patch["connections"][id]!=null) {
+
+					var newElement = document.createElementNS("http://www.w3.org/2000/svg", 'g');
+					var connection = patch["connections"][id];
+					var start = document.getElementById(connection["start"]);
+					var end = document.getElementById(connection["end"]);
+					var line = document.createElementNS("http://www.w3.org/2000/svg", 'line');
+						
+					line.setAttribute("x1", start.getBoundingClientRect()["left"]);
+					line.setAttribute("y1", start.getBoundingClientRect()["top"]);
+					line.setAttribute("x2", end.getBoundingClientRect()["left"]);
+					line.setAttribute("y2", end.getBoundingClientRect()["top"]);
+					line.setAttribute("style", "stroke:rgb(150,150,255);stroke-width:4");
+					line.setAttribute("onclick", "GUI.removeConnection('"+id+"')");
+
+					newElement.appendChild(line);
+					newElement.setAttribute("id", id);
+
+					svg.appendChild(newElement);
+				}
+			}
+
+			that.createPatchFromJSON = function(json) {
+
+			}
+
+			that.move = function (id, xOffset, yOffset) {
+				var domElement = document.getElementById(id);
+				if (domElement) {
+					var transformAttr = ' translate(' + xOffset + ',' + yOffset + ')';
+					domElement.setAttribute('transform', transformAttr);
+				}
+			}
+
+			that.connect = function (id) {
+				
+				if (startNode==null) {
+					startNode = id;
+				}
+				else {
+					endNode = id;
+				}
+
+				if (startNode!=null && endNode!= null) {
+
+					var conn = {"start" : startNode, "end" : endNode};
+					patch["connections"][startNode+"_"+endNode] = conn; 
+					startNode = null
+					endNode = null;
+
+
+					var callback = function() {
+					}
+
+					sendPostData(SERVER+"/REST?patch="+encodeURIComponent(JSON.stringify(patch)), callback);
+					update();
+				}
+			}
+
+			return that;
+		})();
+
+	</script>
+
+	<script>
+        if (GUI) {
+            window.onload = function() {};
+        } else {
+            alert("GUI object not found!");
+        }
+   	</script>
+
+</head>
+	<body>
+		<svg width="800" height="400" id="patch"></svg>
+		<div class="addNode" id="addNode"/>
+	</body>
+</html>

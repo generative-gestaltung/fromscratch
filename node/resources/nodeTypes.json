@@ -1,0 +1,8 @@
+{
+	"vco":{"in":["f","pw"],"out":["saw","pulse"]},
+	"vcf":{"in":["in","f","r"],"out":["hp","lp"]},
+	"vca":{"in":["in"],"out":["out"]},
+	"clk":{"out":["out"]},
+	"mix":{"in":["in0","in1","in2"],"out":["out"]},
+	"mult":{"in":["in"],"out":["out0","out1","out2","out3"]}
+}

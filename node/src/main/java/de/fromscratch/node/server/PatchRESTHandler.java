@@ -5,22 +5,28 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URLDecoder;
 import java.util.Map;
+import java.util.regex.Pattern;
+
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+
 import com.sun.net.httpserver.HttpExchange;
+
 import de.fromscratch.api.Patch;
+import de.fromscratch.node.ComputePatch;
 
 
 public class PatchRESTHandler extends HttpAdapter {
 
 	private URLDecoder decoder = new URLDecoder();
 	private static final String DEFAULT_RESPONSE = "REST API\ncommands:\n/REST/patch\n/REST/nodes\n/REST/edges";
-	Patch<?> patch;
+	ComputePatch patch;
 	
-	public PatchRESTHandler (Patch<?> thePatch) {
+	public PatchRESTHandler (ComputePatch thePatch) {
 		patch = thePatch;
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	public void handle(HttpExchange t) throws IOException {
 		
@@ -33,12 +39,12 @@ public class PatchRESTHandler extends HttpAdapter {
 				output(t,DEFAULT_RESPONSE);
 				return;
 			}
+			
 			switch (tokens[2]) {
 			
 			case "patch":
-
-				Map<String, Object> patchMap = patch.getMap();
-				String ret = (new JSONObject(patchMap)).toJSONString();
+				Map<String, Object> patchMap = patch.getAsMap();
+				String ret = patch.getAsJSONString("/");
 				
 				for (int i=3; i<tokens.length; i++) {
 					Object entry = patchMap.get(tokens[i]);
@@ -54,31 +60,57 @@ public class PatchRESTHandler extends HttpAdapter {
 				
 				output(t, ret);
 				break;
-			
-			case "classes":
-				output(t, patch.toJSON());
+			//TODO:
+			case "nodes":
+				if (tokens.length<4) {
+					output(t, patch.getAsJSONString("/nodes"));
+				}
+				else {
+					if (tokens[3].contains("?")) {
+					}
+					else {
+						String nodeName = path.substring(tokens[0].length()+tokens[1].length()+tokens[2].length()+3);
+						output(t, patch.getNodeCode(nodeName));
+					}
+				}
 				break;
 				
-				default:
-					break;
+			default:
+				break;
 			}
 		}
 		
 		else if (t.getRequestMethod().equals("POST")) {
-			String dec = URLDecoder.decode(tokens[1].split("=")[1], "UTF-8");
-//			System.out.println(dec);
-//			InputStream stream = t.getRequestBody();
-//			byte[] bytes = new byte[stream.available()];
-//			stream.read(bytes);
-//			System.out.println(new String(bytes));
 			
-			JSONParser parser = new JSONParser();
-			try {
-				JSONObject o = (JSONObject) parser.parse(dec);
-				patch.updatePatch(o);
+			String argname = tokens[1].split(Pattern.quote("?"))[1];
+			argname = argname.substring(0, argname.indexOf("="));
+			String val = URLDecoder.decode(tokens[1].split(Pattern.quote("="))[1], "UTF-8");
+
+			
+			if (argname.equals("patch") || argname.equals("save") || argname.equals("addnode")) {
+
+				JSONObject o = null;
+				JSONParser parser = new JSONParser();
+				try {
+					o = (JSONObject) parser.parse(val);
+				}
+				catch (Exception e) {
+					e.printStackTrace();
+				}
+				
+				if (argname.equals("patch")) {
+					patch.updatePatch(o);
+				}
+				else if (argname.equals("save")){
+					patch.save (o);
+				}
+				else if (argname.equals("addnode")) {
+					patch.addNode(o);
+				}
 			}
-			catch (Exception e) {
-				e.printStackTrace();
+			
+			else {
+				patch.setNodeCode(argname, val);
 			}
 		}
 	}

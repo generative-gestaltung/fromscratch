@@ -142,16 +142,6 @@ public class Analyzer {
 		}
 	}
 	
-	
-	
-	
-	
-	public List<Field> getFields() {
-		return null;
-	}
-	
-	
-	
 	public Map<String, Object> analyzeByClass (Object root, Class<?> theClass) {
 		Map<String, Object> map = new HashMap<String, Object>();
 		
@@ -164,8 +154,6 @@ public class Analyzer {
 		return map;
 	}
 	
-	
-	
 	public Map<String, Object> analyzeByAnnotation (Object root, Class<? extends Annotation> theClass) {
 		Map<String, Object> map = new HashMap<String, Object>();
 		
@@ -177,10 +165,6 @@ public class Analyzer {
 		}
 		return map;
 	}
-	
-	
-	
-	
 	
 	
 	/**

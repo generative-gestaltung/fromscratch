@@ -2,7 +2,7 @@
 <html>
 <head>
 
-	<link type="text/css" href="main.css" rel="stylesheet">
+	<link type="text/css" href="./main.css" rel="stylesheet">
 	<script>
 
 		var GUI = (function() {
@@ -135,6 +135,7 @@
 				body.setAttribute("class", "node");
 				body.setAttribute("width","120");
 				body.setAttribute("height","40");
+				body.setAttribute("ondblclick", "alert('xx')");
 				body.style.stroke = "#000"; 
 				body.style.strokeWidth = "5px";
 				body.style.fill = "grey";

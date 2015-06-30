@@ -1,10 +1,10 @@
 package de.fromscratch.node.test;
 
-import de.fromscratch.api.Node;
 import de.fromscratch.node.Input;
+import de.fromscratch.node.NodeImpl;
 import de.fromscratch.node.Output;
 
-public class VCA implements Node {
+public class VCA extends NodeImpl {
 	
 	@Input
 	public float amp;
@@ -16,6 +16,5 @@ public class VCA implements Node {
 	@Override
 	public void update(float time) {
 		out = amp*in;
-		System.out.println(out);
 	}
 }

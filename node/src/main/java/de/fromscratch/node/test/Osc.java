@@ -2,9 +2,10 @@ package de.fromscratch.node.test;
 
 import de.fromscratch.api.Node;
 import de.fromscratch.node.Input;
+import de.fromscratch.node.NodeImpl;
 import de.fromscratch.node.Output;
 
-public class Osc implements Node {
+public class Osc extends NodeImpl {
 	
 	@Input
 	public float phase;

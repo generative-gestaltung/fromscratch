@@ -4,9 +4,16 @@ import java.util.Map;
 
 public abstract class Patch <ConnectionType>{
 
-	protected Map<String, Object> nodes;
-	protected Map<String, ConnectionType> edges;
+	protected Map<String, Object> map;
 
+	public void setId (String theId) {
+		map.put("id", theId);
+	}
+	
+	public String getId () {
+		return map.get("id").toString();
+	}
+	
 	public void update (float time) {
 		
 	}
@@ -17,9 +24,5 @@ public abstract class Patch <ConnectionType>{
 	
 	public String toJSON() {
 		return "";
-	}
-
-	public Map<String, Object> getMap() {
-		return null;
 	}
 }

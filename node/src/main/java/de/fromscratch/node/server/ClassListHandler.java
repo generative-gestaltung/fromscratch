@@ -1,23 +1,26 @@
 package de.fromscratch.node.server;
 
 import java.io.IOException;
-
 import org.json.simple.JSONObject;
-
 import com.sun.net.httpserver.HttpExchange;
+import de.fromscratch.node.NodeRegistry;
 
-import de.fromscratch.node.ClassManager;
-
+/**
+ * Return a json string that holds all registered nodes.
+ * 
+ * @author maxg
+ *
+ */
 public class ClassListHandler extends HttpAdapter {
 
-	ClassManager classManager;
+	NodeRegistry nodeRegistry;
 	
-	public ClassListHandler(ClassManager theManager) {
-		classManager = theManager;
+	public ClassListHandler (NodeRegistry theNodeRegistry) {
+		nodeRegistry = theNodeRegistry;
 	}
 	
 	@Override
 	public void handle(HttpExchange t) throws IOException {
-		output(t, (new JSONObject(classManager.getClassMap())).toString());
+		output(t, (new JSONObject(nodeRegistry.getClassMap())).toString());
 	}
 }

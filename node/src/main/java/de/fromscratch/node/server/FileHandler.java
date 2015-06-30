@@ -6,36 +6,37 @@ import java.nio.file.Paths;
 import java.util.List;
 import com.sun.net.httpserver.HttpExchange;
 
+/**
+ * file handler with optional arguments support
+ * @author maxg
+ *
+ */
 public class FileHandler extends HttpAdapter {
 	
-	String _myResourcePath = "";
-	
+	private String _myResourcePath = "";
+	protected static final String ERROR_FILE = "404";
 	public FileHandler (String theResourcePath) {
 		_myResourcePath = theResourcePath;
 	}
 	
-	@Override
-	public void handle (HttpExchange t) throws IOException {
-		System.out.println("FILE");
-		String path = t.getRequestURI().toString();
-		String output = getFile(_myResourcePath+"/"+path);
-		output(t, output);
+	protected String readFile (String thePath) throws Exception {
+		String doc = "";
+		List<String>lines = Files.readAllLines(Paths.get(_myResourcePath+"/"+thePath));
+		for (String l: lines) {
+			doc += l+"\n";
+		}
+		return doc;
 	}
 	
-
-	private String getFile(String pathToFile) {
+	@Override
+	public void handle (HttpExchange t) throws IOException {
 		
-		String ret = "";
+		String path = t.getRequestURI().toString();
 		try {
-			List<String>lines = Files.readAllLines(Paths.get(pathToFile));
-			for (String l: lines) {
-				ret += l+"\n";
-			}
-			return ret;
+			output (t, readFile(path));
 		}
 		catch (Exception e) {
-			e.printStackTrace();
-			return ret;
+			output(t, ERROR_FILE);
 		}
 	}
 }

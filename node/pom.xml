@@ -10,6 +10,24 @@
   <artifactId>node</artifactId>
   <name>fromscratch.node</name>
   
+  <build> 
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <configuration>
+            <archive>
+            <manifest>
+              <addClasspath>true</addClasspath>
+              <classpathPrefix>lib/</classpathPrefix>
+              <mainClass>de.fromscratch.node.Main
+			  </mainClass>
+            </manifest>
+          </archive>
+       </configuration>
+      </plugin>
+	</plugins>
+  </build> 
   
   <dependencies>
     <dependency>
@@ -27,5 +45,10 @@
       <artifactId>develop</artifactId>
       <version>${project.version}</version>
     </dependency>
+	<dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>3.4</version>
+    </dependency>  
   </dependencies>
 </project>

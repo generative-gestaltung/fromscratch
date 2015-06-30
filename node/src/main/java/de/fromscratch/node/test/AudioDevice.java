@@ -1,14 +1,15 @@
 package de.fromscratch.node.test;
 
-import de.fromscratch.api.Node;
 import de.fromscratch.node.Input;
+import de.fromscratch.node.NodeImpl;
 
-public class AudioDevice implements Node {
+public class AudioDevice extends NodeImpl {
+	
 	@Input
 	public float in;
 	
 	@Override
 	public void update(float time) {
-//		System.out.println(in);
+	
 	}
 }

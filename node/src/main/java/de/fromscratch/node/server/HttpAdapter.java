@@ -9,7 +9,8 @@ import com.sun.net.httpserver.HttpHandler;
 public abstract class HttpAdapter implements HttpHandler {
 
 	protected void output (HttpExchange t, String theVal) throws IOException {
-        t.sendResponseHeaders(200, theVal.length());
+		
+		t.sendResponseHeaders(200, theVal.length());
         OutputStream os = t.getResponseBody();
         os.write(theVal.getBytes());
         os.close();

@@ -7,5 +7,7 @@ package de.fromscratch.api;
  *
  */
 public interface Node {
+	public String getId ();
+	public void setId (String id);
 	public void update(float time);
 }

@@ -1,10 +1,11 @@
 package de.fromscratch.node.test;
 
-import de.fromscratch.api.Node;
 import de.fromscratch.node.Input;
+import de.fromscratch.node.NodeImpl;
 import de.fromscratch.node.Output;
 
-public class Filter implements Node {
+public class Filter extends NodeImpl {
+	
 	@Input
 	public float freq;
 	@Input

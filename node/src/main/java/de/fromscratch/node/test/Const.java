@@ -1,14 +1,14 @@
 package de.fromscratch.node.test;
 
-import de.fromscratch.api.Node;
+import de.fromscratch.node.NodeImpl;
 import de.fromscratch.node.Output;
 
-public class Const implements Node {
+public class Const extends NodeImpl {
 	@Output
 	public float out;
 	
 	@Override
 	public void update(float time) {
-		out = 1000f;
+		out = 10f;
 	}
 }

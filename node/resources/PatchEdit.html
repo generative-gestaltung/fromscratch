@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link type="text/css" href="../main.css" rel="stylesheet">
+	<script>
+
+		var GUI = (function() {
+
+			var that = {};	
+			var SERVER = "http://localhost:8888";
+			var nodeTypes = {};
+			var nextId = 0;
+			var nextId = 0;
+			var startNode = null;
+			var endNode = null;
+			var selectElement = 0;
+			var currentX = 0;
+			var currentY = 0;
+			var currentMatrix = 0;
+			var patch = {
+				"nodes" : {}, 
+				"edges" : {}
+			};
+
+
+			that.save = function() {
+				sendGetData (SERVER+"/REST/patch", callBackSavePatch);	
+			}
+
+			this.sendGetData = function (theURL, theCallback) {
+				var xmlhttp; 
+		        if (window.XMLHttpRequest) {
+		        	xmlhttp = new XMLHttpRequest();
+		        } else {
+		        	xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+		        }
+		        xmlhttp.onreadystatechange = theCallback;
+		        xmlhttp.open("GET", theURL, true);
+		        xmlhttp.send();
+			}
+
+			this.sendPostData = function (theURL, theCallback) {
+				var xmlhttp; 
+		        if (window.XMLHttpRequest) {
+		        	xmlhttp = new XMLHttpRequest();
+		        } else {
+		        	xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+		        }
+		        xmlhttp.onreadystatechange = theCallback;
+		        xmlhttp.open("POST", theURL, true);
+		        xmlhttp.send();
+			}
+
+			var callbackListClasses = function() {
+				if (this.readyState == 4 && this.status == 200) {
+					nodeTypes = JSON.parse(this.responseText);
+					listClasses();
+				}
+			}
+
+			var callBackLoadPatch = function() {
+				if (this.readyState == 4 && this.status == 200) {
+					patch = JSON.parse(this.responseText);
+					update();
+				}
+			}
+
+			var callBackSavePatch = function() {
+				if (this.readyState == 4 && this.status == 200) {
+					var saveName = document.getElementById("saveField").value;
+					patch = JSON.parse(this.responseText);
+					patch["id"] = saveName;
+					console.log(JSON.stringify(patch));
+					sendPostData(SERVER+"/REST?save="+encodeURIComponent(JSON.stringify(patch)), null);
+				}
+			}
+
+			that.init = function() {
+				sendGetData (SERVER+"/CLASSES", callbackListClasses);	
+				sendGetData (SERVER+"/REST/patch", callBackLoadPatch);		
+			}
+
+			this.listClasses = function() {
+
+				var menu = document.getElementById("addNode");
+				for (var path in nodeTypes) {
+					var head = document.createElement("div");
+					head.innerHTML = path;
+					menu.appendChild(head);
+					for (var i in nodeTypes[path]) {
+						var menuItem = document.createElement("div");
+						menuItem.setAttribute("onclick", "GUI.addNode('"+path+"','"+i+"')");
+						menuItem.innerHTML=i;
+						menu.appendChild(menuItem);
+					}
+				}
+				update();
+			}
+
+			this.selectElement = function (evt, target) { 
+
+				selectedElement = target;
+    			currentX = evt.clientX;
+    			currentY = evt.clientY;
+				currentMatrix = selectedElement.getAttributeNS(null, "transform").slice(7,-1).split(' ');
+				
+				for(var i=0; i<currentMatrix.length; i++) {
+       	 			currentMatrix[i] = parseFloat(currentMatrix[i]);
+      			}
+
+    			selectedElement.setAttributeNS(null, "onmousemove", "moveElement(evt)");
+    			selectedElement.setAttributeNS(null, "onmouseout", "deselectElement(evt)");
+				selectedElement.setAttributeNS(null, "onmouseup", "deselectElement(evt)");
+  			}
+
+  			this.moveElement = function(evt) {
+  				dx = evt.clientX - currentX;
+			  	dy = evt.clientY - currentY;
+			  	currentMatrix[4] += dx;
+			 	currentMatrix[5] += dy;
+			  	newMatrix = "matrix(" + currentMatrix.join(' ') + ")";
+
+			  	selectedElement.setAttributeNS(null, "transform", newMatrix);
+			  	currentX = evt.clientX;
+			  	currentY = evt.clientY;
+			  	update();
+			}
+
+			this.deselectElement = function(evt) {
+				if(selectedElement != 0){
+			    	selectedElement.removeAttributeNS(null, "onmousemove");
+			    	selectedElement.removeAttributeNS(null, "onmouseout");
+			    	selectedElement.removeAttributeNS(null, "onmouseup");
+			    	selectedElement = 0;
+				}
+			}
+
+			this.drawNode = function (id, theNode) {
+
+				var svg = document.getElementById('patch'); 
+				var hasNode = document.getElementById(id);
+
+				if (hasNode != null) return;
+
+				var newElement = document.createElementNS("http://www.w3.org/2000/svg", 'g');
+				newElement.setAttribute("transform", "matrix(1 0 0 1 0 0)");
+				newElement.setAttribute("id", id);
+				
+				var body = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
+				body.setAttribute("class", "node");
+				body.setAttribute("width","120");
+				body.setAttribute("height","40");
+				body.style.stroke = "#000"; 
+				body.style.strokeWidth = "5px";
+				body.style.fill = "grey";
+
+				newElement.setAttribute("onmousedown","selectElement(evt, this)");
+				newElement.appendChild(body);
+
+				newElement.setAttribute("ondblclick", "window.open('/NodeEdit/"+id+"');");
+
+
+				var cnt = 0;
+				for (var i in theNode["inputs"]) {
+					var input = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
+					input.setAttribute("width","10");
+					input.setAttribute("height","10");
+					input.setAttribute("x",0);
+					input.setAttribute("y",cnt*12);
+					input.style.fill = "red";
+					input.setAttribute("id", id+"."+i);
+					input.setAttribute("onclick", "GUI.connect(this.id)");
+					newElement.appendChild(input);
+					cnt += 1;
+				}
+
+				cnt = 0;
+				for (var i in theNode["outputs"]) {
+					var output = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
+					output.setAttribute("width","10");
+					output.setAttribute("height","10");
+					output.setAttribute("x",110);
+					output.setAttribute("y",cnt*12);
+					output.style.fill = "green";
+					output.setAttribute("id", id+"."+i);
+					output.setAttribute("onclick", "GUI.connect(this.id)");
+					newElement.appendChild(output);
+					cnt += 1;
+				}			
+
+				var text = document.createElementNS("http://www.w3.org/2000/svg", 'text');
+				text.innerHTML = "XXX";
+				text.setAttribute("font-size",14);
+				text.setAttribute("fill", "red");
+				newElement.appendChild(text);
+				svg.appendChild(newElement);
+			}
+
+			this.update = function() {
+
+				for (var id in patch["nodes"]) {
+					drawNode (id, patch["nodes"][id]);
+				}
+				for (var id in patch["edges"]) {			
+					drawConnection(id);
+				}
+			}
+
+			that.addNode = function (path, type) {
+				/*
+				patch["nodes"][type+nextId] = nodeTypes[path][type];
+				patch["nodes"][type+nextId]["id"] = type+nextId;
+				patch["nodes"][type+nextId]["class"] = path+"."+type;
+				nextId += 1;
+				sendPostData(SERVER+"/REST?patch="+encodeURIComponent(JSON.stringify(patch)), null);
+				*/	
+				
+				var node = nodeTypes[path][type];
+				sendPostData (SERVER+"/REST?addnode="+encodeURIComponent(JSON.stringify(node)), null);
+				sendGetData  (SERVER+"/REST/patch", callBackLoadPatch);
+			}
+
+
+			that.removeConnection = function(id) {
+
+				var svg = document.getElementById("patch");
+				var conn = document.getElementById(id);
+				delete patch["edges"][id]; // = null;
+				svg.removeChild(conn);
+				sendPostData(SERVER+"/REST?patch="+encodeURIComponent(JSON.stringify(patch)), null);
+				update();
+			}
+
+			this.drawConnection = function (id) {
+
+				var svg = document.getElementById('patch');
+				var hasConnection = document.getElementById(id);
+				if (hasConnection!=null) {
+					svg.removeChild(hasConnection);
+					hasConnection = null;
+				}
+
+				if (hasConnection==null && patch["edges"][id]!=null) {
+
+					var newElement = document.createElementNS("http://www.w3.org/2000/svg", 'g');
+					var connection = patch["edges"][id];
+					var start = document.getElementById(connection["start"]);
+					var end = document.getElementById(connection["end"]);
+					var line = document.createElementNS("http://www.w3.org/2000/svg", 'line');
+						
+					line.setAttribute("x1", start.getBoundingClientRect()["left"]);
+					line.setAttribute("y1", start.getBoundingClientRect()["top"]);
+					line.setAttribute("x2", end.getBoundingClientRect()["left"]);
+					line.setAttribute("y2", end.getBoundingClientRect()["top"]);
+					line.setAttribute("style", "stroke:rgb(150,150,255);stroke-width:4");
+					line.setAttribute("onclick", "GUI.removeConnection('"+id+"')");
+
+					newElement.appendChild(line);
+					newElement.setAttribute("id", id);
+
+					svg.appendChild(newElement);
+				}
+			}
+
+			that.connect = function (id) {
+				
+				if (startNode==null) {
+					startNode = id;
+				}
+				else {
+					endNode = id;
+				}
+
+				if (startNode!=null && endNode!= null) {
+
+					var conn = {"start" : startNode, "end" : endNode};
+					patch["edges"][startNode+"_"+endNode] = conn; 
+					startNode = null
+					endNode = null;
+
+					var callback = function() {
+					
+					}
+
+					sendPostData(SERVER+"/REST?patch="+encodeURIComponent(JSON.stringify(patch)), callback);
+					update();
+				}
+			}
+
+			return that;
+		})();
+
+	</script>
+
+	<script>
+        if (GUI) {
+            window.onload = function() {GUI.init()};
+        } else {
+            alert("GUI object not found!");
+        }
+   	</script>
+
+</head>
+	<body>
+		<svg width="800" height="400" id="patch"></svg>
+		<div class="addNode" id="addNode"/>
+		<br>
+		SAVE: 
+		<input type="text" id="saveField" value="">
+		<button onclick="GUI.save();">save</button>
+	</body>
+</html>

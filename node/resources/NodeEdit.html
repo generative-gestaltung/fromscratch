@@ -1,0 +1,79 @@
+<!doctype html>
+
+<link rel="stylesheet" href="/CodeMirror/lib/codemirror.css">
+<script src="/CodeMirror/lib/codemirror.js"></script>
+<script src="/CodeMirror/mode/groovy/groovy.js"></script>
+<style type="text/css">
+  .CodeMirror {
+    border: 1px solid #eee;
+    height: auto;
+  }
+</style>
+
+
+<form>
+	<textarea id="code" name="code">
+	</textarea>
+</form>
+
+<button type="button" onclick="update();">update</button>
+
+<script>
+
+
+	var cnt = 0;
+	var code = document.getElementById("code");
+	var nodeName = document.URL.substring(document.URL.lastIndexOf("/")+1);
+	var editor = {};
+
+	var xmlhttp; 
+	if (window.XMLHttpRequest) {
+		xmlhttp = new XMLHttpRequest();
+	} else {
+		xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+	}
+
+	var sendPost = function (url, params) {
+/*
+var url = "get_data.php";
+var params = "lorem=ipsum&name=binny";
+*/
+		xmlhttp.open("POST", url, true);
+		xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+		xmlhttp.setRequestHeader("Content-length", params.length);
+		xmlhttp.setRequestHeader("Connection", "close");
+
+		xmlhttp.onreadystatechange = function() {
+			if(xmlhttp.readyState == 4 && http.status == 200) {
+				alert(xmlhttp.responseText);
+			}
+		}
+
+		xmlhttp.send(params);
+	}
+
+	var sendGetData = function (theURL) {
+		xmlhttp.onreadystatechange = callback;
+		xmlhttp.open("GET", theURL, true);
+		xmlhttp.send();
+	}
+
+	var update = function () {
+		//sendGetData("/REST/nodes/"+nodeName+"?set="+encodeURIComponent(editor.getValue()));
+		sendPost ("/REST?"+nodeName+"="+encodeURIComponent(editor.getValue()),"");
+	}
+
+	var callback = function() {
+		if (cnt==2) {
+			code.innerHTML = this.responseText;
+			editor = CodeMirror.fromTextArea (code, {
+		    	lineNumbers: true,
+		    	viewportMargin: Infinity
+	  		});
+		}
+		cnt += 1;
+	}
+
+	sendGetData("/REST/nodes/"+nodeName);
+
+</script>

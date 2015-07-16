@@ -4,10 +4,10 @@ import java.util.Map;
 
 public abstract class Patch <ConnectionType>{
 
-	protected Map<String, Object> map;
+	@Control
+	public Map<String, Object> map;
 
 	public void setId (String theId) {
-		map.put("id", theId);
 	}
 	
 	public String getId () {

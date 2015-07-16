@@ -22,6 +22,7 @@ public class Analyzer {
 	private static Object convertToType (Object o, Class<?> type) {
 
 		if (type==Float.TYPE) {
+			if (o instanceof String) return Float.parseFloat((String)o);
 			return ((Number)o).floatValue();
 		}
 		if (type==Integer.TYPE) {
@@ -115,7 +116,8 @@ public class Analyzer {
 	}
 	
 	public interface Filter {
-		public boolean apply(Field theField);
+		public boolean apply (Field theField);
+		public Object objectToOutput (Object theObject);
 	}
 	
 	public class FilterByInterface implements Filter {
@@ -124,9 +126,15 @@ public class Analyzer {
 		public FilterByInterface (Class<?> theClass) {
 			implementedClass = theClass;
 		}
+		
 		@Override
 		public boolean apply(Field theField) {
 			return implementedClass.isAssignableFrom(theField.getType());
+		}
+		
+		@Override
+		public String objectToOutput (Object theObject) {
+			return theObject.toString();
 		}
 	}
 	
@@ -136,9 +144,21 @@ public class Analyzer {
 		public FilterByAnnotation (Class<? extends Annotation> theClass) {
 			annotation = theClass;
 		}
+		
 		@Override
 		public boolean apply(Field theField) {
 			return theField.isAnnotationPresent(annotation);
+		}
+
+		@Override
+		public Map<String, Object> objectToOutput (Object theObject) {
+			
+			Map<String, Object> ret = new HashMap<String, Object>();
+			ret.put("val", theObject);
+			ret.put("type", theObject.getClass().getSimpleName());
+			ret.put("min", 0);
+			ret.put("max", 100);
+			return ret;
 		}
 	}
 	
@@ -202,17 +222,23 @@ public class Analyzer {
 	 */
 	private void analyzeFiltered (Map<String, Object> theMap, Object o, Filter theFilter) {
 		
+		
 		for (Field f: o.getClass().getFields()) {
 			if (theFilter.apply(f)) {	
 				try {
 					Object child = f.get(o);
 					if (theFilter.apply(f)) {
-						
 						String name = f.getName();
-						if (name==null || name.equals("")) {
-							name = f.getName();
+						
+						if (!isPrimitive(child)) {
+							Map<String, Object> subMap = new HashMap<String, Object>();
+							theMap.put(name, subMap);
+							analyzeFiltered(subMap, child, theFilter);
 						}
-						theMap.put (name, child);
+						
+						else {
+							theMap.put (name, theFilter.objectToOutput(child));
+						}
 					}
 				}
 				catch (Exception e) {
@@ -222,6 +248,9 @@ public class Analyzer {
 		}
 	}
 	
+	private boolean isPrimitive (Object o) {
+		return (o instanceof Float || o instanceof Integer || o instanceof String || o instanceof Character);
+	}
 	
 	private void analyze (Map<String, Object> theMap, Object o, String path) {
 		for (Field f: o.getClass().getFields()) {

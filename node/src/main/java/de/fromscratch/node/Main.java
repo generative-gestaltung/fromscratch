@@ -10,6 +10,7 @@ import org.json.simple.JSONObject;
 import de.fromscratch.node.server.ClassListHandler;
 import de.fromscratch.node.server.CommandHandler;
 import de.fromscratch.node.server.FileHandler;
+import de.fromscratch.node.server.PatchControlHandler;
 import de.fromscratch.node.server.PatchRESTHandler;
 
 
@@ -24,7 +25,7 @@ public class Main {
 	
 	
 	public void sleep (long millis) {
-		try {
+		try {	
 			Thread.sleep(millis);
 		}
 		catch (Exception e) {}
@@ -45,10 +46,13 @@ public class Main {
 			
 			// rest api
 			server.createContext("/REST", new PatchRESTHandler(patch));
+			server.createContext("/CONTROL", new PatchControlHandler(patch));
 			server.createContext("/CLASSES", new ClassListHandler(nodeRegistry));
+			
 			
 			// custom controller
 			server.createContext("/PatchEdit", new CommandHandler(RESOURCE_PATH));
+			server.createContext("/gui", new CommandHandler(RESOURCE_PATH));
 			server.createContext("/NodeEdit",  new CommandHandler(RESOURCE_PATH));
 			
 			server.setExecutor(null);

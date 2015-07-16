@@ -1,6 +1,8 @@
 package de.fromscratch.node;
 
 import de.fromscratch.api.Node;
+import de.fromscratch.api.Control;
+
 
 public abstract class NodeImpl implements Node {
 
@@ -10,7 +12,7 @@ public abstract class NodeImpl implements Node {
 	public String getId() {
 		return id;
 	}
-
+	
 	@Override
 	public void setId (String theId) {
 		id = theId;

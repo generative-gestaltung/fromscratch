@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
 
 
 
-public class RuntimeCompiler {
+public class RuntimeCompiler2 {
 
     // the node name, to become the name of the temporal compiled class
     String className = "";
@@ -51,7 +51,7 @@ public class RuntimeCompiler {
 	
 	
 	
-	public RuntimeCompiler (String theNodeName, String theOriginalClassPath, String baseDir, String theClassPathPrefix) {
+	public RuntimeCompiler2 (String theNodeName, String theOriginalClassPath, String baseDir, String theClassPathPrefix) {
             
 		
 		className = theNodeName;

@@ -24,7 +24,8 @@
 
 
 			that.save = function() {
-				sendGetData (SERVER+"/REST/patch", callBackSavePatch);	
+				var saveName = document.getElementById("saveField").value;
+				sendPostData (SERVER+"/REST?save="+saveName, null);
 			}
 
 			this.sendGetData = function (theURL, theCallback) {
@@ -188,12 +189,22 @@
 					cnt += 1;
 				}			
 
+				addText(newElement);
+
+				svg.appendChild(newElement, "link", "AVV");
+			}
+
+			addText = function (node, theText, theLink) {
 				var text = document.createElementNS("http://www.w3.org/2000/svg", 'text');
-				text.innerHTML = "XXX";
+				
+				text.innerHTML = ""+theLink;
 				text.setAttribute("font-size",14);
 				text.setAttribute("fill", "red");
-				newElement.appendChild(text);
-				svg.appendChild(newElement);
+				
+				text.setAttribute("x", 20);
+				text.setAttribute("y", 15);
+
+				node.appendChild(text);
 			}
 
 			this.update = function() {

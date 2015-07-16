@@ -1,0 +1,188 @@
+<html>
+  <head>
+    <style>
+      .draggable {
+        cursor: move;
+      }
+    </style>
+    
+    <script>
+
+    var GUI = (function() {
+
+      var that = {};
+      var selectedElement = 0;
+      var currentX = 0;
+      var currentY = 0;
+      var currentMatrix = 0;
+      var guiElements = {};
+
+
+      this.sendPostData = function (theURL, theCallback) {
+        var xmlhttp; 
+            if (window.XMLHttpRequest) {
+              xmlhttp = new XMLHttpRequest();
+            } else {
+              xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+            }
+            xmlhttp.onreadystatechange = theCallback;
+            xmlhttp.open("POST", theURL, true);
+            xmlhttp.send();
+      }
+        
+      this.sendGetData = function (theURL, theCallback) {
+        var xmlhttp; 
+            if (window.XMLHttpRequest) {
+              xmlhttp = new XMLHttpRequest();
+            } else {
+              xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+            }
+            xmlhttp.onreadystatechange = theCallback;
+            xmlhttp.open("GET", theURL, true);
+            xmlhttp.send();
+      }
+
+      var callbackGetLayout = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          guiElements = JSON.parse(this.responseText);
+          buildGui(guiElements, "");
+          console.log(guiElements);
+        }
+      }
+
+
+      this.clickSlider = function(evt, id) {
+        
+        var pos = evt.target.getAttributeNS(null, "x");
+        var guiVal = (evt.clientX - pos);
+
+        document.getElementById(id+"_v").setAttribute("width", guiVal);
+        var elem = getEntry(guiElements, id, 1);
+
+        var val = guiVal / width * (elem["max"] - elem["min"])+ elem["min"];
+        elem["val"] = val;
+
+        console.log(id);
+        console.log(elem);
+
+        sendPostData ("/CONTROL/ab?"+id+"="+encodeURIComponent(val), null);
+      }
+
+
+
+      var x = 20;
+      var y = 20;
+      var width = 200;
+
+      this.buildGui = function (theMap, path) {
+
+        var keys = Object.keys(theMap);
+        for (var key in keys) {
+
+          var name = keys[key];
+          var elem = theMap[name];
+
+
+          if ("type" in elem) {
+            console.log (elem);
+            switch (elem["type"]) {
+              case "Float":
+                var slider = new Slider (path+"."+name, x, y, width);
+                break;
+              default:
+                break;
+            }
+            y+=50;
+          }
+
+          else {
+            buildGui (elem, path+"."+name);
+          }
+        }
+      }
+
+
+
+      this.getEntry = function (theMap, path, lvl) {
+        var tokens = path.split(".");
+        if (lvl>=tokens.length) return theMap;
+        return getEntry (theMap[tokens[lvl]], path, lvl+1);
+      }
+
+
+      this.Slider = function (key, x, y, width) {
+
+        var rect0 = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
+        var svg = document.getElementById('svg');
+        rect0.setAttribute("x", x);
+        rect0.setAttribute("y", y);
+        rect0.setAttribute("width", width);
+        rect0.setAttribute("height", 20);
+        rect0.setAttribute("fill", "grey");
+        rect0.setAttribute("onmousedown", "clickSlider(evt, '"+key+"')");
+        rect0.setAttribute("id", key);
+        svg.appendChild(rect0);
+
+        var rect1 = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
+        rect1.setAttribute("x", x);
+        rect1.setAttribute("y", y+2);
+        rect1.setAttribute("width", width);
+        rect1.setAttribute("height", 16);
+        rect1.setAttribute("fill", "red");
+        rect1.setAttribute("onmousedown", "clickSlider(evt, '"+key+"')");
+        rect1.setAttribute("id", key+"_v");
+
+        var text = document.createElementNS("http://www.w3.org/2000/svg", 'text');
+        text.setAttribute ("x", x);
+        text.setAttribute ("y", y);
+        text.setAttribute ("fill", "blue");
+        
+        text.innerHTML = key;
+        svg.appendChild(rect1);
+        svg.appendChild(text);
+
+      }
+
+      this.addGuiElement = function (path, type, x, y, width, dataType, min, max, val) {
+        guiElements[path] = {"type":type, "x":x, "y":y, "width": width, "dataType":dataType, "min":min, "max":max, "val":val};
+      }
+
+      that.init = function() {
+        sendGetData("/CONTROL/ab", callbackGetLayout);
+
+      }
+
+      return that;
+    })();
+
+    </script>
+
+
+    <script>
+        if (GUI) {
+            window.onload = function() {GUI.init()};
+        } else {
+            alert("GUI object not found!");
+        }
+    </script>
+
+    
+  <head>
+
+  <body>
+    
+    <svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="1.1" width="400" height="200" id="svg">
+      
+      
+      
+<!--
+      <rect class="draggable"
+          x="30" y="30"
+          width="20" height="20"
+          fill="blue"
+          transform="matrix(1 0 0 1 0 0)"
+          onmousedown="selectElement(evt)"/>
+-->
+    </svg>
+  </body>
+</html>

@@ -14,6 +14,7 @@ import com.sun.net.httpserver.HttpExchange;
 
 import de.fromscratch.api.Patch;
 import de.fromscratch.node.ComputePatch;
+import de.fromscratch.node.LoadSave;
 
 
 public class PatchRESTHandler extends HttpAdapter {
@@ -87,7 +88,7 @@ public class PatchRESTHandler extends HttpAdapter {
 			String val = URLDecoder.decode(tokens[1].split(Pattern.quote("="))[1], "UTF-8");
 
 			
-			if (argname.equals("patch") || argname.equals("save") || argname.equals("addnode")) {
+			if (argname.equals("patch")|| argname.equals("addnode")) {
 
 				JSONObject o = null;
 				JSONParser parser = new JSONParser();
@@ -101,12 +102,16 @@ public class PatchRESTHandler extends HttpAdapter {
 				if (argname.equals("patch")) {
 					patch.updatePatch(o);
 				}
-				else if (argname.equals("save")){
-					patch.save (o);
-				}
 				else if (argname.equals("addnode")) {
 					patch.addNode(o);
 				}
+			}
+			
+
+			
+			// TODO: remove save to other handler
+			else if (argname.equals("save")){
+				LoadSave.savePatch (val, patch);
 			}
 			
 			else {

@@ -34,12 +34,16 @@ public class ComputePatch extends Patch<VariableLinkImpl> {
 		return new ComputePatch (map);
 	}
 	
- 	Map<String, Node> nodes() {
+ 	public Map<String, Node> nodes() {
  		return (Map<String, Node>)map.get("nodes");
  	}
  	
- 	Map<String, VariableLinkImpl> edges() {
+ 	public Map<String, VariableLinkImpl> edges() {
  		return (Map<String, VariableLinkImpl>)map.get("edges");
+ 	}
+ 	
+ 	public List<Node> nodesAsList() {
+ 		return new ArrayList<Node>(nodes().values());
  	}
  	
  	/**
@@ -74,23 +78,7 @@ public class ComputePatch extends Patch<VariableLinkImpl> {
 		map.put("nodes", new HashMap<String, Object>());
 		map.put("edges", new HashMap<String, Object>());
  	}
- 	
- 	public void save (Map<String, Object> theMap) {
- 		clear();
- 		updatePatch(theMap);
- 		JSONObject o = new JSONObject(theMap);
- 		try {
- 			Files.write(Paths.get("TMP/"+getId()+"/patch.json"), o.toJSONString().getBytes());
- 		}
- 		catch (Exception e) {
- 			e.printStackTrace();
- 		}
- 	}
- 	
- 	
- 	
- 	
- 	
+
  	
  	public void addNode (Map<String, Object> theNode) {
  		
@@ -134,6 +122,14 @@ public class ComputePatch extends Patch<VariableLinkImpl> {
 		}
 	}
 	
+	public void reset (Map<String, Object> theMap, String theNewId) {
+
+		Map<String, Object> nodes = (Map<String,Object>)theMap.get("nodes");
+		for (String key : nodes.keySet()) {
+			compilers.put(key, new RuntimeCompiler(key, (String) ((Map<String,Object>)nodes.get(key)).get("classPath"), "TMP", theNewId));
+		}
+	}
+	
 	public String getNodeCode (String theNodeName) {
 		return compilers.get(theNodeName).getCode();
 	}
@@ -141,6 +137,16 @@ public class ComputePatch extends Patch<VariableLinkImpl> {
 	public void setNodeCode (String theNodeName, String theCode) {
 		compilers.get(theNodeName).setCode(theCode);
 	}
+	
+	@Override
+	public void setId (String theId) {
+		map.put("id", theId);
+		for (String nodeId: nodes().keySet()) {
+			//compilers.get(nodeId).updatePatchPath(theId);
+			compilers.put("nodeId", new RuntimeCompiler(nodeId, nodes().get(nodeId).getClass().toString(), "TMP", getId()));
+		}
+	}
+	
 	
 	@Override
 	public void update(float time) {
